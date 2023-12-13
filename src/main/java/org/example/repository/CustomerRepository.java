@@ -1,22 +1,20 @@
 package org.example.repository;
 
+import org.example.DbConnection;
 import org.example.entity.Customer;
 
 
 import java.sql.*;
 
 
-public abstract class CustomerRepository implements CrudRepository<Customer> {
+public class CustomerRepository implements CrudRepository<Customer> {
 
-    private final String url = "jdbc:postgresql://localhost:5432/docker";
-    private final String user = "docker";
-    private final String password = "docker";
 
     @Override
     public Customer findById(int id) {
-        String FIND_BY_ID_QUERY = "SELECT * FROM customer WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(FIND_BY_ID_QUERY)) {
+        String findByIdQuery = "SELECT * FROM customer WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(findByIdQuery)) {
             statement.setInt(1, id);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -35,9 +33,9 @@ public abstract class CustomerRepository implements CrudRepository<Customer> {
 
     @Override
     public Customer create(Customer entity) {
-        String query = "INSERT INTO customer (name) VALUES (?)";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+        String createQuery = "INSERT INTO customer (name) VALUES (?)";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(createQuery, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, entity.getName());
             int affectedRows = statement.executeUpdate();
             if (affectedRows == 0) {
@@ -58,17 +56,15 @@ public abstract class CustomerRepository implements CrudRepository<Customer> {
 
     @Override
     public void delete(int id) {
-        String sql = "DELETE FROM customer WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password)) {
-            connection.setAutoCommit(false);
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setInt(1, id);
-                int affectedRows = preparedStatement.executeUpdate();
-                if (affectedRows == 1) {
-                    connection.commit();
-                } else {
-                    connection.rollback();
-                }
+        String deleteQuery = "DELETE FROM customer WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(deleteQuery)) {
+            statement.setInt(1, id);
+            int affectedRows = statement.executeUpdate();
+            if (affectedRows == 1) {
+                connection.commit();
+            } else {
+                connection.rollback();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -78,9 +74,9 @@ public abstract class CustomerRepository implements CrudRepository<Customer> {
 
     @Override
     public Customer update(Customer entity) {
-        String query = "UPDATE customer SET name = ? WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(query)) {
+        String updateQuery = "UPDATE customer SET name = ? WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(updateQuery)) {
             statement.setString(1, entity.getName());
             statement.setInt(2, entity.getId());
             int affectedRows = statement.executeUpdate();

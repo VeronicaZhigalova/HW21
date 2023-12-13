@@ -16,9 +16,4 @@ public interface CrudRepository<T> {
 
     T update(T entity);
 
-    Optional<Order> getOrderById(int id);
-
-    List<Order> getOrdersByCustomer(int customerId);
-
-    Optional<Product> getProductById(int productId);
 }

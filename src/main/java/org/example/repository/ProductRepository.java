@@ -1,20 +1,17 @@
 package org.example.repository;
 
+import org.example.DbConnection;
 import org.example.entity.Product;
 
 import java.sql.*;
 
-public abstract class ProductRepository implements CrudRepository<Product> {
-
-    private final String url = "jdbc:postgresql://localhost:5432/docker";
-    private final String user = "docker";
-    private final String password = "docker";
+public class ProductRepository implements CrudRepository<Product> {
 
     @Override
     public Product findById(int id) {
-        String FIND_BY_ID_QUERY = "SELECT * FROM product WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(FIND_BY_ID_QUERY)) {
+        String findByIdQuery = "SELECT * FROM product WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(findByIdQuery)) {
             statement.setInt(1, id);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -34,9 +31,9 @@ public abstract class ProductRepository implements CrudRepository<Product> {
 
     @Override
     public Product create(Product entity) {
-        String query = "INSERT INTO product (name, price) VALUES (?, ?)";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+        String createQuery = "INSERT INTO product (name, price) VALUES (?, ?)";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(createQuery, Statement.RETURN_GENERATED_KEYS)) {
             statement.setString(1, entity.getName());
             statement.setDouble(2, entity.getPrice());
             int affectedRows = statement.executeUpdate();
@@ -56,11 +53,12 @@ public abstract class ProductRepository implements CrudRepository<Product> {
         return entity;
     }
 
+
     @Override
     public void delete(int id) {
-        String sql = "DELETE FROM product WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
+        String deleteQuery = "DELETE FROM product WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(deleteQuery)) {
             preparedStatement.setInt(1, id);
             int affectedRows = preparedStatement.executeUpdate();
             if (affectedRows != 1) {
@@ -71,11 +69,12 @@ public abstract class ProductRepository implements CrudRepository<Product> {
         }
     }
 
+
     @Override
     public Product update(Product entity) {
-        String query = "UPDATE product SET name = ?, price = ? WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(query)) {
+        String updateQuery = "UPDATE product SET name = ?, price = ? WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(updateQuery)) {
             statement.setString(1, entity.getName());
             statement.setDouble(2, entity.getPrice());
             statement.setInt(3, entity.getId());
@@ -89,3 +88,4 @@ public abstract class ProductRepository implements CrudRepository<Product> {
         return entity;
     }
 }
+

@@ -2,6 +2,7 @@ package org.example.service;
 
 
 import lombok.RequiredArgsConstructor;
+import org.example.entity.Customer;
 import org.example.entity.Order;
 import org.example.entity.Product;
 
@@ -21,6 +22,8 @@ public class OrderService {
 
     private final ProductRepository productRepository;
 
+    private final CustomerService customerService;
+
 
     /**
      * Получить заказ по его уникальному идентификатору.
@@ -29,7 +32,8 @@ public class OrderService {
      * @return {@link Optional}, содержащий заказ, если найден, или пустой {@link Optional}, если не найден.
      */
     public Optional<Order> getOrderById(int id) {
-        return orderRepository.getOrderById(id);
+        Optional<Order> order = Optional.ofNullable(orderRepository.findById(id));
+        return order;
     }
 
     /**
@@ -39,8 +43,14 @@ public class OrderService {
      * @return Список заказов, связанных с клиентом.
      */
     public List<Order> getOrdersByCustomer(int customerId) {
-        List<Order> orders = orderRepository.getOrdersByCustomer(customerId);
-        return new ArrayList<>(orders);
+        Optional<Customer> customer = customerService.getById(customerId);
+        if (customer.isPresent()) {
+            return (List<Order>) orderRepository.findById(customerId);
+        }
+
+        return new ArrayList<>();
+
+
     }
 
 
@@ -51,13 +61,16 @@ public class OrderService {
      * @return Общая стоимость всех заказов для клиента.
      */
     public double getTotalPriceForCustomer(int customerId) {
-        List<Order> orders = orderRepository.getOrdersByCustomer(customerId);
+        List<Order> orders = (List<Order>) orderRepository.findById(customerId);
         double totalPrice = 0.0;
         for (Order order : orders) {
-            Optional<Product> product = productRepository.getProductById(order.getProductId());
-            totalPrice += product.map(Product::getPrice).orElse(0.0);
+            Optional<Product> product = Optional.ofNullable(productRepository.findById(order.getProductId()));
+            if (product.isPresent()) {
+                totalPrice += product.get().getPrice();
+            }
         }
         return totalPrice;
+
     }
 
     /**
@@ -67,7 +80,7 @@ public class OrderService {
      * @throws IllegalArgumentException Если заказ уже существует в репозитории.
      */
     public Order createOrder(Order order) {
-        if (orderRepository.getOrderById(order.getId()).isPresent()) {
+        if (getOrderById(order.getId()).isPresent()) {
             throw new IllegalArgumentException("Order with the same id already exists.");
         }
         return orderRepository.create(order);
@@ -95,6 +108,7 @@ public class OrderService {
         if (order.isEmpty()) {
             throw new IllegalArgumentException("Order with id " + orderId + " does not exist.");
         }
-        orderRepository.delete(orderId);
+        orderRepository.delete(order.get().getId());
+
     }
 }

@@ -1,20 +1,17 @@
 package org.example.repository;
 
+import org.example.DbConnection;
 import org.example.entity.Order;
 
 import java.sql.*;
 
-public abstract class OrderRepository implements CrudRepository<Order> {
-
-    private final String url = "jdbc:postgresql://localhost:5432/docker";
-    private final String user = "docker";
-    private final String password = "docker";
+public class OrderRepository implements CrudRepository<Order> {
 
     @Override
     public Order findById(int id) {
-        String FIND_BY_ID_QUERY = "SELECT * FROM order WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(FIND_BY_ID_QUERY)) {
+        String findByIdQuery = "SELECT * FROM order WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(findByIdQuery)) {
             statement.setInt(1, id);
             try (ResultSet resultSet = statement.executeQuery()) {
                 if (resultSet.next()) {
@@ -34,9 +31,9 @@ public abstract class OrderRepository implements CrudRepository<Order> {
 
     @Override
     public Order create(Order entity) {
-        String query = "INSERT INTO order (customerId, productId) VALUES (?, ?)";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
+        String createQuery = "INSERT INTO order (customerId, productId) VALUES (?, ?)";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(createQuery, Statement.RETURN_GENERATED_KEYS)) {
             statement.setInt(1, entity.getCustomerId());
             statement.setInt(2, entity.getProductId());
             int affectedRows = statement.executeUpdate();
@@ -59,28 +56,27 @@ public abstract class OrderRepository implements CrudRepository<Order> {
 
     @Override
     public void delete(int id) {
-        String sql = "DELETE FROM order WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password)) {
-            connection.setAutoCommit(false);
-            try (PreparedStatement preparedStatement = connection.prepareStatement(sql)) {
-                preparedStatement.setInt(1, id);
-                int affectedRows = preparedStatement.executeUpdate();
-                if (affectedRows == 1) {
-                    connection.commit();
-                } else {
-                    connection.rollback();
-                }
+        String deleteQuery = "DELETE FROM order WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(deleteQuery)) {
+            preparedStatement.setInt(1, id);
+            int affectedRows = preparedStatement.executeUpdate();
+            if (affectedRows == 1) {
+                connection.commit();
+            } else {
+                connection.rollback();
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
+
     @Override
     public Order update(Order entity) {
-        String query = "UPDATE order SET customerId = ?, productId = ? WHERE id = ?";
-        try (Connection connection = DriverManager.getConnection(url, user, password);
-             PreparedStatement statement = connection.prepareStatement(query)) {
+        String updateQuery = "UPDATE order SET customerId = ?, productId = ? WHERE id = ?";
+        try (Connection connection = DbConnection.getInstance().getConnection();
+             PreparedStatement statement = connection.prepareStatement(updateQuery)) {
             statement.setInt(1, entity.getCustomerId());
             statement.setInt(2, entity.getProductId());
             statement.setInt(3, entity.getId());
